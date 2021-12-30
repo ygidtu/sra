@@ -79,7 +79,7 @@ func main() {
 	goptions.ParseAndFail(&options)
 
 	if _, err := os.Stat(options.Output); os.IsNotExist(err) {
-		err = os.MkdirAll(options.Output, 0644)
+		err = os.MkdirAll(options.Output, 0777)
 		if err != nil {
 			log.Fatal("无法创建输出文件夹", err)
 		}
