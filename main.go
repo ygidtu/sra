@@ -65,7 +65,7 @@ func main() {
 		SRA     string        `goptions:"-u, --url, description='SRA的官方链接'"`
 		Proxy   string        `goptions:"-x, --proxy, description='代理链接地址，比如：http://127.0.0.1:7890'"`
 		Output  string        `goptions:"-o, --output, description='输出文件夹'"`
-		Param   string        `goption:"-p, --param, description='额外的查询参数'"`
+		Param   string        `goptions:"-p, --param, description='额外的查询参数'"`
 		Timeout time.Duration `goptions:"-t, --timeout, description='Connection timeout in seconds'"`
 		Open    bool          `goptions:"--open, description='是否打开chrome的图形化界面'"`
 		Help    goptions.Help `goptions:"-h, --help, description='Show this help'"`
