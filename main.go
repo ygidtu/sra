@@ -95,6 +95,11 @@ func main() {
 	}
 
 	defaultDownload := filepath.Join(user.HomeDir, "Downloads")
+	sra_result := filepath.Join(defaultDownload, "sra_result.csv")
+
+	if _, ok := os.Stat(sra_result); !os.IsNotExist(ok) {
+		os.Remove(sra_result)
+	}
 
 	// create context
 	opts := []chromedp.ExecAllocatorOption{
@@ -129,8 +134,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	for _, rbp := range RBPs {
-		log.Println(rbp)
+	for idx, rbp := range RBPs {
+		log.Println(fmt.Sprintf("[%d/%d] %s", idx+1, len(RBPs), rbp))
 		for _, i := range KEYWORD {
 			log.Println(i)
 			output := filepath.Join(options.Output, fmt.Sprintf("%v_%v.csv", rbp, i))
@@ -141,13 +146,15 @@ func main() {
 			term := fmt.Sprintf("(\"%s\"[Title] OR \"%s\"[Description]) AND (\"%s\"[Title] OR \"%s\"[Description]) AND %s", i, i, rbp, rbp, options.Param)
 			// log.Println(term)
 			err = chromedp.Run(ctx,
-				chromedp.SetValue(`#term`, term, chromedp.ByID),
+				chromedp.WaitReady("#term", chromedp.ByID),
+				chromedp.SetValue("#term", term, chromedp.ByID),
 				chromedp.Sleep(3*time.Second),
+				chromedp.WaitReady("#search", chromedp.ByID),
 				chromedp.Click("#search", chromedp.ByID),
 				chromedp.Sleep(options.Timeout),
 			)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal("search failed", err)
 			}
 
 			// err = chromedp.Run(ctx,
@@ -181,12 +188,20 @@ func main() {
 				continue
 			}
 
-			sra_result := filepath.Join(defaultDownload, "sra_result.csv")
+			time.Sleep(1 * time.Second)
 
-			if _, err := os.Stat((sra_result)); !os.IsNotExist(err) {
-				os.Rename(sra_result, output)
+			_, err = os.Stat((sra_result))
+			// 只有下载完成才能推出循环
+			for os.IsNotExist(err) {
+				log.Println("wait for download")
+				time.Sleep(3 * time.Second)
+				_, err = os.Stat((sra_result))
 			}
+			os.Rename(sra_result, output)
 		}
 		time.Sleep(3 * time.Second)
 	}
 }
+
+// IGF2BP2 knockdown
+// ("knockdown"[Title] OR "knockdown"[Description]) AND ("IGF2BP2"[Title] OR "IGF2BP2"[Description]) AND "Homo sapiens"[orgn:__txid9606] AND(rna seq[Strategy])
