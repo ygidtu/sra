@@ -182,13 +182,13 @@ func main() {
 				chromedp.Click("#search", chromedp.ByID),
 				chromedp.Sleep(options.Timeout),
 			); err != nil {
-				log.Error("search failed", err)
+				log.Fatal("search failed", err)
 			}
 
 			// 根据页面title判断是否有结果
 			title := ""
 			if err := chromedp.Run(ctx, chromedp.Title(&title)); err != nil {
-				log.Error("failed to get title from page", err)
+				log.Fatal("failed to get title from page", err)
 			}
 
 			if strings.Contains(title, "No items found") {
@@ -209,7 +209,7 @@ func main() {
 				chromedp.WaitReady(`//div[@id="submenu_File"]/button`, chromedp.BySearch),
 				chromedp.Click(`//div[@id="submenu_File"]/button`, chromedp.BySearch),
 			); err != nil {
-				log.Error("failed to click download", err)
+				log.Fatal("failed to click download", err)
 			}
 
 			time.Sleep(2 * time.Second)
@@ -224,8 +224,8 @@ func main() {
 			os.Rename(sra_result, output)
 			progress.Add(name)
 			progress.Dump()
+			time.Sleep(3 * time.Second)
 		}
-		time.Sleep(3 * time.Second)
 	}
 }
 
