@@ -136,7 +136,7 @@ func main() {
 
 	contextOpts := []chromedp.ContextOption{
 		chromedp.WithLogf(log.Infof),
-		chromedp.WithDebugf(log.Debugf),
+		//chromedp.WithDebugf(log.Debugf),
 		chromedp.WithErrorf(log.Infof),
 	}
 	allocContext, _ := chromedp.NewExecAllocator(context.Background(), opts...)
@@ -152,9 +152,8 @@ func main() {
 	}
 
 	for idx, rbp := range RBPs {
-		log.Infof("[%d/%d] %s", idx+1, len(RBPs), rbp)
 		for _, i := range KEYWORD {
-			log.Info(i)
+			log.Infof("[%d/%d] %s - %s", idx+1, len(RBPs), rbp, i)
 
 			name := fmt.Sprintf("%v_%v.csv", rbp, i)
 			output := filepath.Join(options.Output, name)
@@ -180,15 +179,25 @@ func main() {
 				chromedp.Sleep(3*time.Second),
 				chromedp.WaitReady("#search", chromedp.ByID),
 				chromedp.Click("#search", chromedp.ByID),
-				chromedp.Sleep(options.Timeout),
 			); err != nil {
 				log.Fatal("search failed", err)
 			}
+
+			time.Sleep(options.Timeout)
 
 			// 根据页面title判断是否有结果
 			title := ""
 			if err := chromedp.Run(ctx, chromedp.Title(&title)); err != nil {
 				log.Fatal("failed to get title from page", err)
+			}
+
+			for !strings.Contains(title, fmt.Sprintf("(\"%s\"[Title] OR \"%s\"[Description])", i, i)) && !strings.Contains(title, "No items found") {
+				log.Warn("page title contains neither term nor 'no items found', is page still loading ?")
+				time.Sleep(3 * time.Second)
+
+				if err := chromedp.Run(ctx, chromedp.Title(&title)); err != nil {
+					log.Fatal("failed to get title from page", err)
+				}
 			}
 
 			if strings.Contains(title, "No items found") {
@@ -221,6 +230,8 @@ func main() {
 				time.Sleep(3 * time.Second)
 				_, err = os.Stat((sra_result))
 			}
+
+			log.Debug("rename sra_result to ", output)
 			os.Rename(sra_result, output)
 			progress.Add(name)
 			progress.Dump()
