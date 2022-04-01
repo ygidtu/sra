@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	pb "github.com/cheggaaa/pb/v3"
 	"github.com/ygidtu/sra/client"
 	"go.uber.org/zap"
 	"os"
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	URL = "https://trace.ncbi.nlm.nih.gov/Traces/study/?acc=SRP344246&o=experiment_s:a;acc_s:a"
+	URL = "https://trace.ncbi.nlm.nih.gov/Traces/study/"
 )
 
 var (
@@ -19,7 +20,8 @@ var (
 	ctx   context.Context
 )
 
-func write(path string, output chan [][]string) {
+func write(path string, output chan [][]string, bar *pb.ProgressBar, wg *sync.WaitGroup) {
+	defer wg.Done()
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		sugar.Fatal(err)
@@ -36,19 +38,29 @@ func write(path string, output chan [][]string) {
 			break
 		}
 
-		if !header {
-			data = data[1:]
-		} else {
-			header = false
-		}
+		bar.Increment()
 
-		for _, value := range data {
-			err := writer.Write(value)
-			if err != nil {
-				sugar.Fatal(err)
+		if len(data) > 0 {
+			if !header {
+				data = data[1:]
+			} else {
+				header = false
+			}
+
+			for _, value := range data {
+				err := writer.Write(value)
+				if err != nil {
+					sugar.Fatal(err)
+				}
+				writer.Flush()
 			}
 		}
+
+		if bar.Total() == bar.Current() {
+			break
+		}
 	}
+	bar.Finish()
 }
 
 func Study(options *Params, sugar_ *zap.SugaredLogger) {
@@ -61,11 +73,15 @@ func Study(options *Params, sugar_ *zap.SugaredLogger) {
 	defer cancel()
 	ctx = ctx_
 
-	page, err := getPage(map[string]string{"acc": options.StudyID})
+	page, doc, err := getPage(map[string]string{"acc": options.StudyID})
 	if err != nil {
 		sugar.Fatal(err)
 	}
-	sugar.Debugf("Current study has %d pages", page)
+	sugar.Infof("Current study has %d pages", page)
+
+	if page < options.Threads {
+		options.Threads = page
+	}
 
 	var wg sync.WaitGroup
 	params := make(chan map[string]string)
@@ -77,16 +93,20 @@ func Study(options *Params, sugar_ *zap.SugaredLogger) {
 		go getResults(&wg, params, output)
 	}
 
-	go write(options.Output, output)
+	bar := pb.StartNew(page)
+	wg.Add(1)
+	go write(options.Output, output, bar, &wg)
 
-	for i := 1; i <= page; i++ {
+	extractData(doc, output)
+	for i := 2; i <= page; i++ {
 		params <- map[string]string{
 			"page": fmt.Sprintf("%d", i),
 			"acc":  options.StudyID,
 			"o":    "experiment_s:a;acc_s:a",
 		}
 	}
+
 	close(params)
 	wg.Wait()
-
+	close(output)
 }
