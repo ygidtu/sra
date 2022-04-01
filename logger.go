@@ -50,5 +50,5 @@ func SetLogger(debug bool) {
 
 	logger := zap.New(core, zap.AddCaller())
 	defer logger.Sync()
-	log = logger.Sugar()
+	sugar = logger.Sugar()
 }
