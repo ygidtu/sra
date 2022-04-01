@@ -11,14 +11,40 @@ https://www.ncbi.nlm.nih.gov/sra/?term=(%22knockdown%22%5BTitle%5DOR+%22knockdow
 
 ```bash
 ❯ ./sra -h
-Usage: sra [global options] 
+Usage: sra [global options] <verb> [verb options]
 
 Global options:
-        -i, --input   RBP的list，csv格式，带列名 (*)
-        -u, --url     SRA的官方链接 (default: https://www.ncbi.nlm.nih.gov/sra/)
-        -x, --proxy   代理链接地址，比如：http://127.0.0.1:7890
-        -o, --output  输出文件夹 (default: ./output)
-        -t, --timeout Connection timeout in seconds (default: 10s)
-            --open    是否打开chrome的图形化界面
-        -h, --help    Show this help
+        -v, --version   Show version
+            --debug     Show debug info
+            --help      Show this help
+
+Verbs:
+    detail:
+        -s, --study     Study ID to query
+        -a, --accession Accession ID to query
+        -r, --run       Run ID to query
+        -p, --proxy     Proxy
+        -o, --output    Output json (default: ./output.json)
+        -t, --threads   How many threads to use (default: 1)
+        -h, --help      Show this help
+    ebi:
+        -s, --study     Study ID to query
+        -p, --proxy     Proxy
+        -o, --output    Output json (default: ./ebi_output.csv)
+    search:
+        -i, --input     RBP的list，csv格式，带列名 (*)
+        -u, --url       SRA的官方链接 (default: https://www.ncbi.nlm.nih.gov/sra/)
+        -x, --proxy     代理链接地址，比如：http://127.0.0.1:7890
+        -o, --output    输出文件夹 (default: ./output)
+        -p, --param     额外的查询参数 (default: "Homo sapiens"[orgn:__txid9606] AND(rna seq[Strategy]))
+        -t, --timeout   Connection timeout in seconds (default: 10s)
+            --open      是否打开chrome的图形化界面
+            --debug     显示debug log
+        -h, --help      Show this help
+    study:
+        -s, --study     Study ID to query
+        -p, --proxy     Proxy
+        -o, --output    Output json (default: ./output.csv)
+            --open      是否打开chrome的图形化界面
+        -t, --threads   How many threads to use (default: 1)
 ```

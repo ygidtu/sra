@@ -56,5 +56,7 @@ func main() {
 		ebi.Ebi(&options.Ebi, sugar)
 	} else if options.Verbs == "study" {
 		study.Study(&options.Study, sugar)
+	} else {
+		goptions.PrintHelp()
 	}
 }
