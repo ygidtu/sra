@@ -21,7 +21,7 @@ func init() {
 type Params struct {
 	Version bool          `goptions:"-v, --version, description='Show version'"`
 	Debug   bool          `goptions:"--debug, description='Show debug info'"`
-	Help    goptions.Help `goptions:"--help, description='Show this help'"`
+	Help    goptions.Help `goptions:"-h, --help, description='Show this help'"`
 
 	goptions.Verbs
 	Details details.Params `goptions:"detail"`
@@ -50,7 +50,7 @@ func main() {
 
 	if options.Verbs == "search" {
 		search.Search(&options.Search, sugar)
-	} else if options.Verbs == "dtails" {
+	} else if options.Verbs == "detail" {
 		details.Details(&options.Details, sugar)
 	} else if options.Verbs == "ebi" {
 		ebi.Ebi(&options.Ebi, sugar)

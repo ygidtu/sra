@@ -21,7 +21,7 @@ func Details(options *Params, sugar_ *zap.SugaredLogger) {
 	sugar = sugar_
 	sugar.Info(options.String())
 
-	if cli, err := client.SetSurfClient(options.Proxy); err != nil {
+	if cli, err := client.SetSurfClient(options.Proxy); err == nil {
 		surf = cli
 	} else {
 		sugar.Fatal(err)

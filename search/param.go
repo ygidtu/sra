@@ -2,7 +2,6 @@ package search
 
 import (
 	"encoding/json"
-	"github.com/voxelbrain/goptions"
 	"time"
 )
 
@@ -15,7 +14,6 @@ type Params struct {
 	Timeout time.Duration `goptions:"-t, --timeout, description='Connection timeout in seconds'"`
 	Open    bool          `goptions:"--open, description='是否打开chrome的图形化界面'"`
 	Debug   bool          `goptions:"--debug, description='显示debug log'"`
-	Help    goptions.Help `goptions:"-h, --help, description='Show this help'"`
 }
 
 func (param *Params) String() string {
