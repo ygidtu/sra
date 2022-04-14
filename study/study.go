@@ -69,7 +69,7 @@ func Study(options *Params, sugar_ *zap.SugaredLogger) {
 	sugar.Info(options.String())
 
 	// create context
-	ctx_, cancel := client.SetChromeClient(options.Open, options.Proxy, sugar)
+	ctx_, cancel := client.SetChromeClient(options.Open, options.Proxy, options.Exec, sugar)
 	defer cancel()
 	ctx = ctx_
 

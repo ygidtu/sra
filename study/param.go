@@ -10,6 +10,7 @@ type Params struct {
 	Output  string `goptions:"-o, --output, description='Output json'"`
 	Open    bool   `goptions:"--open, description='是否打开chrome的图形化界面'"`
 	Threads int    `goptions:"-t, --threads, description='How many threads to use'"`
+	Exec    string `goptions:"-e, --exec, description='path to chrome executable'"`
 }
 
 func (param *Params) String() string {

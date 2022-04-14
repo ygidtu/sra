@@ -3,10 +3,10 @@ package search
 import (
 	"encoding/csv"
 	"fmt"
+	"github.com/chromedp/cdproto/browser"
 	"github.com/ygidtu/sra/client"
 	"io"
 	"os"
-	"os/user"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -21,12 +21,14 @@ var (
 )
 
 func loadRBPs(path string) []string {
+
+	sugar.Infof("Load RBPs from %s", path)
 	res := make([]string, 0)
 	RBPs := map[string]int{}
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		file, err := os.Open(path) //
 		if err != nil {
-			sugar.Error("找不到CSV檔案路徑:", path, err)
+			sugar.Fatalf("找不到CSV檔案路徑: %v, %v", path, err)
 		}
 
 		// read
@@ -42,6 +44,7 @@ func loadRBPs(path string) []string {
 				sugar.Error(err)
 			}
 
+			sugar.Debugf("%v", record)
 			if len(header) < 1 {
 				header = record
 				continue
@@ -80,24 +83,25 @@ func Search(options *Params, sugar_ *zap.SugaredLogger) {
 	}
 	progress.Load()
 
-	KEYWORD := []string{"knockdown", "knockout", "overexpression"}
+	KEYWORD := []string{
+		"knockdown", "knock-down", "knock down",
+		"knockout", "knock out", "knock-out",
+		"overexpression", "over-expression", "over expression",
+		"siRNA", "shRNA", "dCas9", "sgRNA",
+		"crispr cas9", "crispr-cas9",
+	}
 	RBPs := loadRBPs(options.RBP)
 
-	// 默认下载目录和文件
-	user_, err := user.Current()
-	if err != nil {
-		sugar.Error(err)
-	}
+	sugar.Infof("there are %d RBPs", len(RBPs))
 
-	defaultDownload := filepath.Join(user_.HomeDir, "Downloads")
-	sraResult := filepath.Join(defaultDownload, "sra_result.csv")
+	sraResult := filepath.Join(options.Output, "sra_result.csv")
 
 	if _, ok := os.Stat(sraResult); !os.IsNotExist(ok) {
 		_ = os.Remove(sraResult)
 	}
 
 	// create context
-	ctx, cancel := client.SetChromeClient(options.Open, options.Proxy, sugar_)
+	ctx, cancel := client.SetChromeClient(options.Open, options.Proxy, options.Exec, sugar_)
 	defer cancel()
 
 	sugar.Debug("Open: ", options.SRA)
@@ -133,7 +137,7 @@ func Search(options *Params, sugar_ *zap.SugaredLogger) {
 			if err := chromedp.Run(ctx,
 				chromedp.WaitReady("#term", chromedp.ByID),
 				chromedp.SetValue("#term", term, chromedp.ByID),
-				chromedp.Sleep(3*time.Second),
+				//chromedp.Sleep(3*time.Second),
 				chromedp.WaitReady("#search", chromedp.ByID),
 				chromedp.Click("#search", chromedp.ByID),
 			); err != nil {
@@ -155,7 +159,7 @@ func Search(options *Params, sugar_ *zap.SugaredLogger) {
 				}
 
 				sugar.Warn("page title contains neither term nor 'no items found', is page still loading ?")
-				time.Sleep(3 * time.Second)
+				//time.Sleep(3 * time.Second)
 
 				if err := chromedp.Run(ctx, chromedp.Title(&title)); err != nil {
 					sugar.Fatal("failed to get title from page", err)
@@ -173,19 +177,22 @@ func Search(options *Params, sugar_ *zap.SugaredLogger) {
 			if err := chromedp.Run(ctx,
 				chromedp.WaitReady("#sendto", chromedp.ByID),
 				chromedp.Evaluate(`var h4 = document.getElementById("sendto"); h4.click()`, nil),
-				chromedp.Sleep(1*time.Second),
+				chromedp.Sleep(3*time.Second),
 				chromedp.WaitReady("#dest_File", chromedp.ByID),
 				chromedp.Click("#dest_File", chromedp.ByID),
 				chromedp.Sleep(1*time.Second),
+				browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).
+					WithDownloadPath(options.Output).
+					WithEventsEnabled(true),
 				chromedp.WaitReady(`//div[@id="submenu_File"]/button`, chromedp.BySearch),
 				chromedp.Click(`//div[@id="submenu_File"]/button`, chromedp.BySearch),
 			); err != nil {
 				sugar.Fatal("failed to click download", err)
 			}
 
-			time.Sleep(2 * time.Second)
+			//time.Sleep(2 * time.Second)
 
-			_, err = os.Stat(sraResult)
+			_, err := os.Stat(sraResult)
 			// 只有下载完成才能推出循环
 			for os.IsNotExist(err) {
 				sugar.Info("wait for download")
@@ -197,7 +204,7 @@ func Search(options *Params, sugar_ *zap.SugaredLogger) {
 			_ = os.Rename(sraResult, output)
 			progress.Add(name)
 			_ = progress.Dump()
-			time.Sleep(3 * time.Second)
+			//time.Sleep(3 * time.Second)
 		}
 	}
 }

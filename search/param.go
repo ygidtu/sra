@@ -12,8 +12,8 @@ type Params struct {
 	Output  string        `goptions:"-o, --output, description='输出文件夹'"`
 	Param   string        `goptions:"-p, --param, description='额外的查询参数'"`
 	Timeout time.Duration `goptions:"-t, --timeout, description='Connection timeout in seconds'"`
+	Exec    string        `goptions:"-e, --exec, description='path to chrome executable'"`
 	Open    bool          `goptions:"--open, description='是否打开chrome的图形化界面'"`
-	Debug   bool          `goptions:"--debug, description='显示debug log'"`
 }
 
 func (param *Params) String() string {

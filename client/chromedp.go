@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func SetChromeClient(open bool, proxy string, sugar *zap.SugaredLogger) (context.Context, context.CancelFunc) {
+func SetChromeClient(open bool, proxy, exec string, sugar *zap.SugaredLogger) (context.Context, context.CancelFunc) {
 	// create context
 	sugar.Debug("Start chrome under headless ? ", !open)
 	opts := []chromedp.ExecAllocatorOption{
@@ -17,11 +17,12 @@ func SetChromeClient(open bool, proxy string, sugar *zap.SugaredLogger) (context
 		chromedp.NoDefaultBrowserCheck,
 	}
 
+	if exec != "" {
+		opts = append(opts, chromedp.ExecPath(exec))
+	}
+
 	if proxy != "" {
-		opts = append(
-			opts,
-			chromedp.ProxyServer(proxy),
-		)
+		opts = append(opts, chromedp.ProxyServer(proxy))
 	}
 
 	contextOpts := []chromedp.ContextOption{
