@@ -3,7 +3,6 @@ package ena
 import (
 	"bufio"
 	"compress/gzip"
-	"github.com/headzoo/surf/browser"
 	"github.com/schollz/progressbar/v3"
 	"github.com/ygidtu/sra/client"
 	"go.uber.org/zap"
@@ -12,10 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-)
-
-var (
-	surf *browser.Browser
 )
 
 func parseQuery(urlA *url.URL, key, fields string) {
@@ -59,7 +54,7 @@ func parseKey(param *Params) ([]string, error) {
 }
 
 func Ena(options *Params, sugar *zap.SugaredLogger) {
-	sugar.Info(options.String())
+	sugar.Debug(options.String())
 
 	if _, err := os.Stat(options.Output); os.IsNotExist(err) {
 		err := os.MkdirAll(options.Output, os.ModePerm)
@@ -111,24 +106,22 @@ func Ena(options *Params, sugar *zap.SugaredLogger) {
 				sugar.Debug(urlB.String())
 
 				if cli, err := client.SetSurfClient(options.Proxy); err == nil {
-					surf = cli
+					if err := cli.Open(urlB.String()); err != nil {
+						sugar.Fatal(err)
+					}
+
+					f, err := os.OpenFile(oFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+					if err != nil {
+						sugar.Fatal(err)
+					}
+
+					gw := gzip.NewWriter(f)
+					_, _ = cli.Download(gw)
+					_ = gw.Close()
+					_ = f.Close()
 				} else {
 					sugar.Fatal(err)
 				}
-
-				if err := surf.Open(urlB.String()); err != nil {
-					sugar.Fatal(err)
-				}
-
-				f, err := os.OpenFile(oFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-				if err != nil {
-					sugar.Fatal(err)
-				}
-
-				gw := gzip.NewWriter(f)
-				_, _ = surf.Download(gw)
-				_ = gw.Close()
-				_ = f.Close()
 			}
 		}()
 	}

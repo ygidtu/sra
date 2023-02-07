@@ -15,7 +15,7 @@ type Params struct {
 }
 
 func (param *Params) String() string {
-	str, _ := json.Marshal(param)
+	str, _ := json.MarshalIndent(param, "", "    ")
 	return string(str)
 }
 
