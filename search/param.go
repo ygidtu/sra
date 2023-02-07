@@ -6,7 +6,7 @@ import (
 )
 
 type Params struct {
-	RBP     string        `goptions:"-i, --input, obligatory, description='RBP的list，csv格式，带列名'"`
+	RBP     string        `goptions:"-i, --input, description='RBP的list，csv格式，带列名'"` // obligatory,
 	SRA     string        `goptions:"-u, --url, description='SRA的官方链接'"`
 	Proxy   string        `goptions:"-x, --proxy, description='代理链接地址，比如：http://127.0.0.1:7890'"`
 	Output  string        `goptions:"-o, --output, description='输出文件夹'"`

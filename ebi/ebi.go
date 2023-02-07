@@ -23,7 +23,7 @@ var (
 
 func queryURL(url_ string, queries map[string]string) (string, error) {
 	// Use url.Parse() to parse a string into a *url.URL type. If your URL is
-	// already a url.URL type you can skip this step.
+	// already an url.URL type you can skip this step.
 	urlA, err := url.Parse(url_)
 	if err != nil {
 		return url_, err

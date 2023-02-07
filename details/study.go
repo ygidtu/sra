@@ -3,7 +3,6 @@ package details
 import (
 	"encoding/json"
 	"github.com/PuerkitoBio/goquery"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -91,5 +90,5 @@ func (study *Study) Json() string {
 }
 
 func (study *Study) Save(path string) error {
-	return ioutil.WriteFile(path, []byte(study.Json()), os.ModePerm)
+	return os.WriteFile(path, []byte(study.Json()), os.ModePerm)
 }

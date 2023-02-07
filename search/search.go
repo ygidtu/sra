@@ -90,9 +90,15 @@ func Search(options *Params, sugar_ *zap.SugaredLogger) {
 		"siRNA", "shRNA", "dCas9", "sgRNA",
 		"crispr cas9", "crispr-cas9",
 	}
-	RBPs := loadRBPs(options.RBP)
 
-	sugar.Infof("there are %d RBPs", len(RBPs))
+	var RBPs []string
+
+	if _, ok := os.Stat(options.RBP); os.IsExist(ok) {
+		RBPs = loadRBPs(options.RBP)
+		sugar.Infof("there are %d RBPs", len(RBPs))
+	} else {
+		sugar.Infof("wild card RPBs")
+	}
 
 	sraResult := filepath.Join(options.Output, "sra_result.csv")
 
@@ -115,30 +121,109 @@ func Search(options *Params, sugar_ *zap.SugaredLogger) {
 	baseTerm := ""
 	for i, j := range KEYWORD {
 		if i == 0 {
-			baseTerm = fmt.Sprintf("(\"%s\"[Title] OR \"%s\"[Description])", j, j)
+			baseTerm = fmt.Sprintf("(\"%s\"[Title] OR \"%s\"[Text Word])", j, j)
 		} else {
-			baseTerm = fmt.Sprintf("%s OR (\"%s\"[Title] OR \"%s\"[Description])", baseTerm, j, j)
+			baseTerm = fmt.Sprintf("%s OR (\"%s\"[Title] OR \"%s\"[Text Word])", baseTerm, j, j)
 		}
 	}
 
-	for idx, rbp := range RBPs {
-		sugar.Infof("[%d/%d] %s", idx+1, len(RBPs), rbp)
+	if RBPs != nil {
+		for idx, rbp := range RBPs {
+			sugar.Infof("[%d/%d] %s", idx+1, len(RBPs), rbp)
 
-		name := fmt.Sprintf("%v.csv", rbp)
-		output := filepath.Join(options.Output, name)
+			name := fmt.Sprintf("%v.csv", rbp)
+			output := filepath.Join(options.Output, name)
 
-		if progress.Has(name) {
-			sugar.Info("already finished, skip")
-			continue
+			if progress.Has(name) {
+				sugar.Info("already finished, skip")
+				continue
+			}
+
+			// 检查文件是否已存在
+			if _, err := os.Stat(output); !os.IsNotExist(err) {
+				continue
+			}
+
+			// 构建查询语句
+			term := fmt.Sprintf("(\"%s\"[Title] OR \"%s\"[Text Word]) AND %s AND (%s)", rbp, rbp, options.Param, baseTerm)
+
+			// 输入查询语句，查询
+			sugar.Debug("Term: ", term)
+			if err := chromedp.Run(ctx,
+				chromedp.WaitReady("#term", chromedp.ByID),
+				chromedp.SetValue("#term", term, chromedp.ByID),
+				//chromedp.Sleep(3*time.Second),
+				chromedp.WaitReady("#search", chromedp.ByID),
+				chromedp.Click("#search", chromedp.ByID),
+			); err != nil {
+				sugar.Fatal("search failed", err)
+			}
+
+			time.Sleep(options.Timeout)
+
+			// 根据页面title判断是否有结果
+			title := ""
+			if err := chromedp.Run(ctx, chromedp.Title(&title)); err != nil {
+				sugar.Fatal("failed to get title from page", err)
+			}
+
+			for !strings.Contains(title, fmt.Sprintf("(\"%s\"[Title] OR \"%s\"[Text Word])", rbp, rbp)) && !strings.Contains(title, "No items found") {
+
+				if strings.HasPrefix(title, "GSM") || strings.HasPrefix(title, "RNA") {
+					break
+				}
+
+				sugar.Warn("page title contains neither term nor 'no items found', is page still loading ?")
+				time.Sleep(3 * time.Second)
+
+				if err := chromedp.Run(ctx, chromedp.Title(&title)); err != nil {
+					sugar.Fatal("failed to get title from page", err)
+				}
+			}
+
+			if strings.Contains(title, "No items found") {
+				sugar.Infof("No items found, next")
+				progress.Add(name)
+				_ = progress.Dump()
+				continue
+			}
+
+			sugar.Debug("Wait for click")
+			if err := chromedp.Run(ctx,
+				chromedp.WaitReady("#sendto", chromedp.ByID),
+				chromedp.Evaluate(`var h4 = document.getElementById("sendto"); h4.click()`, nil),
+				chromedp.Sleep(3*time.Second),
+				chromedp.WaitReady("#dest_File", chromedp.ByID),
+				chromedp.Click("#dest_File", chromedp.ByID),
+				chromedp.Sleep(1*time.Second),
+				browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).
+					WithDownloadPath(options.Output).
+					WithEventsEnabled(true),
+				chromedp.WaitReady(`//div[@id="submenu_File"]/button`, chromedp.BySearch),
+				chromedp.Click(`//div[@id="submenu_File"]/button`, chromedp.BySearch),
+			); err != nil {
+				sugar.Fatal("failed to click download", err)
+			}
+
+			//time.Sleep(2 * time.Second)
+
+			_, err := os.Stat(sraResult)
+			// 只有下载完成才能推出循环
+			for os.IsNotExist(err) {
+				sugar.Info("wait for download")
+				time.Sleep(3 * time.Second)
+				_, err = os.Stat(sraResult)
+			}
+
+			sugar.Debug("rename sra_result to ", output)
+			_ = os.Rename(sraResult, output)
+			progress.Add(name)
+			_ = progress.Dump()
+			//time.Sleep(3 * time.Second)
 		}
-
-		// 检查文件是否已存在
-		if _, err := os.Stat(output); !os.IsNotExist(err) {
-			continue
-		}
-
+	} else {
 		// 构建查询语句
-		term := fmt.Sprintf("(\"%s\"[Title] OR \"%s\"[Description]) AND %s AND (%s)", rbp, rbp, options.Param, baseTerm)
+		term := fmt.Sprintf("%s AND (%s)", options.Param, baseTerm)
 
 		// 输入查询语句，查询
 		sugar.Debug("Term: ", term)
@@ -160,27 +245,6 @@ func Search(options *Params, sugar_ *zap.SugaredLogger) {
 			sugar.Fatal("failed to get title from page", err)
 		}
 
-		for !strings.Contains(title, fmt.Sprintf("(\"%s\"[Title] OR \"%s\"[Description])", rbp, rbp)) && !strings.Contains(title, "No items found") {
-
-			if strings.HasPrefix(title, "GSM") || strings.HasPrefix(title, "RNA") {
-				break
-			}
-
-			sugar.Warn("page title contains neither term nor 'no items found', is page still loading ?")
-			time.Sleep(3 * time.Second)
-
-			if err := chromedp.Run(ctx, chromedp.Title(&title)); err != nil {
-				sugar.Fatal("failed to get title from page", err)
-			}
-		}
-
-		if strings.Contains(title, "No items found") {
-			sugar.Infof("No items found, next")
-			progress.Add(name)
-			_ = progress.Dump()
-			continue
-		}
-
 		sugar.Debug("Wait for click")
 		if err := chromedp.Run(ctx,
 			chromedp.WaitReady("#sendto", chromedp.ByID),
@@ -198,8 +262,6 @@ func Search(options *Params, sugar_ *zap.SugaredLogger) {
 			sugar.Fatal("failed to click download", err)
 		}
 
-		//time.Sleep(2 * time.Second)
-
 		_, err := os.Stat(sraResult)
 		// 只有下载完成才能推出循环
 		for os.IsNotExist(err) {
@@ -208,9 +270,8 @@ func Search(options *Params, sugar_ *zap.SugaredLogger) {
 			_, err = os.Stat(sraResult)
 		}
 
-		sugar.Debug("rename sra_result to ", output)
-		_ = os.Rename(sraResult, output)
-		progress.Add(name)
+		sugar.Debug("rename sra_result to ", options.Output)
+		_ = os.Rename(sraResult, options.Output)
 		_ = progress.Dump()
 		//time.Sleep(3 * time.Second)
 	}
