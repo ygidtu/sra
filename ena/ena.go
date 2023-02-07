@@ -104,6 +104,13 @@ func Ena(options *Params, sugar *zap.SugaredLogger) {
 					continue
 				}
 
+				oFile := filepath.Join(options.Output, key)
+				if options.Resume {
+					if _, err := os.Stat(oFile); !os.IsNotExist(err) {
+						continue
+					}
+				}
+
 				urlB := *urlA
 				parseQuery(&urlB, strings.TrimSpace(key), options.Fields)
 				sugar.Debug(urlB.String())
@@ -111,7 +118,7 @@ func Ena(options *Params, sugar *zap.SugaredLogger) {
 					sugar.Fatal(err)
 				}
 
-				f, err := os.OpenFile(filepath.Join(options.Output, key), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+				f, err := os.OpenFile(oFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 				if err != nil {
 					sugar.Fatal(err)
 				}
