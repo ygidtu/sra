@@ -60,11 +60,6 @@ func parseKey(param *Params) ([]string, error) {
 
 func Ena(options *Params, sugar *zap.SugaredLogger) {
 	sugar.Info(options.String())
-	if cli, err := client.SetSurfClient(options.Proxy); err == nil {
-		surf = cli
-	} else {
-		sugar.Fatal(err)
-	}
 
 	if _, err := os.Stat(options.Output); os.IsNotExist(err) {
 		err := os.MkdirAll(options.Output, os.ModePerm)
@@ -114,6 +109,13 @@ func Ena(options *Params, sugar *zap.SugaredLogger) {
 				urlB := *urlA
 				parseQuery(&urlB, strings.TrimSpace(key), options.Fields)
 				sugar.Debug(urlB.String())
+
+				if cli, err := client.SetSurfClient(options.Proxy); err == nil {
+					surf = cli
+				} else {
+					sugar.Fatal(err)
+				}
+
 				if err := surf.Open(urlB.String()); err != nil {
 					sugar.Fatal(err)
 				}
