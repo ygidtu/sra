@@ -3,8 +3,8 @@ package ena
 import (
 	"bufio"
 	"compress/gzip"
-	"github.com/cheggaaa/pb/v3"
 	"github.com/headzoo/surf/browser"
+	"github.com/schollz/progressbar/v3"
 	"github.com/ygidtu/sra/client"
 	"go.uber.org/zap"
 	"net/url"
@@ -84,7 +84,7 @@ func Ena(options *Params, sugar *zap.SugaredLogger) {
 	}
 
 	// create and start new bar
-	bar := pb.StartNew(len(keys))
+	bar := progressbar.Default(int64(len(keys)))
 
 	paramChan := make(chan string)
 
@@ -98,7 +98,7 @@ func Ena(options *Params, sugar *zap.SugaredLogger) {
 				if !ok {
 					break
 				}
-				bar.Increment()
+				_ = bar.Add(1)
 
 				if key == "" {
 					continue

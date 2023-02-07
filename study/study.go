@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
-	pb "github.com/cheggaaa/pb/v3"
+	"github.com/schollz/progressbar/v3"
 	"github.com/ygidtu/sra/client"
 	"go.uber.org/zap"
 	"os"
@@ -20,7 +20,7 @@ var (
 	ctx   context.Context
 )
 
-func write(path string, output chan [][]string, bar *pb.ProgressBar, wg *sync.WaitGroup) {
+func write(path string, output chan [][]string, bar *progressbar.ProgressBar, wg *sync.WaitGroup) {
 	defer wg.Done()
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 	if err != nil {
@@ -38,7 +38,7 @@ func write(path string, output chan [][]string, bar *pb.ProgressBar, wg *sync.Wa
 			break
 		}
 
-		bar.Increment()
+		_ = bar.Add(1)
 
 		if len(data) > 0 {
 			if !header {
@@ -56,11 +56,10 @@ func write(path string, output chan [][]string, bar *pb.ProgressBar, wg *sync.Wa
 			}
 		}
 
-		if bar.Total() == bar.Current() {
+		if bar.IsFinished() {
 			break
 		}
 	}
-	bar.Finish()
 }
 
 func Study(options *Params, sugar_ *zap.SugaredLogger) {
@@ -93,7 +92,7 @@ func Study(options *Params, sugar_ *zap.SugaredLogger) {
 		go getResults(&wg, params, output)
 	}
 
-	bar := pb.StartNew(page)
+	bar := progressbar.Default(int64(page))
 	wg.Add(1)
 	go write(options.Output, output, bar, &wg)
 
