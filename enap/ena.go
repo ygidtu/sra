@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"sync"
 )
@@ -178,9 +179,11 @@ func EnaP(options *Params, sugar *zap.SugaredLogger) {
 						continue
 					}
 					var summ *summaries
-					err = json.Unmarshal([]byte(html.UnescapeString(cli.Body())), &summ)
+					pattern := regexp.MustCompile("<[/?\\w\\s\"'()=]+>")
+					content := pattern.ReplaceAllString(html.UnescapeString(cli.Body()), "")
+					err = json.Unmarshal([]byte(content), &summ)
 					if err != nil {
-						sugar.Debug("%v", html.UnescapeString(cli.Body()))
+						sugar.Debugf("%v", content)
 						sugar.Errorf("%v: %v", key, err)
 					}
 					outChan <- summ
