@@ -92,7 +92,7 @@ func Study(options *Params, sugar_ *zap.SugaredLogger) {
 		go getResults(&wg, params, output)
 	}
 
-	bar := progressbar.Default(int64(page))
+	bar := client.Bar(page)
 	wg.Add(1)
 	go write(options.Output, output, bar, &wg)
 

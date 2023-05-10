@@ -6,6 +6,7 @@ import (
 	"github.com/ygidtu/sra/details"
 	"github.com/ygidtu/sra/ebi"
 	"github.com/ygidtu/sra/ena"
+	enaP "github.com/ygidtu/sra/enap"
 	"github.com/ygidtu/sra/search"
 	"github.com/ygidtu/sra/study"
 	"go.uber.org/zap"
@@ -34,6 +35,7 @@ type Params struct {
 	Search  search.Params  `goptions:"search"`
 	Study   study.Params   `goptions:"study"`
 	Ena     ena.Params     `goptions:"ena"`
+	EnaP    enaP.Params    `goptions:"enap"`
 }
 
 func DefaultParams() *Params {
@@ -43,6 +45,7 @@ func DefaultParams() *Params {
 		Search:  search.DefaultParam(),
 		Study:   study.DefaultParam(),
 		Ena:     ena.DefaultParam(),
+		EnaP:    enaP.DefaultParam(),
 	}
 }
 
@@ -70,6 +73,8 @@ func main() {
 		study.Study(&options.Study, sugar)
 	} else if options.Verbs == "ena" {
 		ena.Ena(&options.Ena, sugar)
+	} else if options.Verbs == "enap" {
+		enaP.EnaP(&options.EnaP, sugar)
 	} else {
 		goptions.PrintHelp()
 	}

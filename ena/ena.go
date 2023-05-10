@@ -3,7 +3,6 @@ package ena
 import (
 	"bufio"
 	"compress/gzip"
-	"github.com/schollz/progressbar/v3"
 	"github.com/ygidtu/sra/client"
 	"go.uber.org/zap"
 	"net/url"
@@ -74,7 +73,7 @@ func Ena(options *Params, sugar *zap.SugaredLogger) {
 	}
 
 	// create and start new bar
-	bar := progressbar.Default(int64(len(keys)))
+	bar := client.Bar(len(keys))
 
 	paramChan := make(chan string)
 
@@ -107,7 +106,8 @@ func Ena(options *Params, sugar *zap.SugaredLogger) {
 
 				if cli, err := client.SetSurfClient(options.Proxy); err == nil {
 					if err := cli.Open(urlB.String()); err != nil {
-						sugar.Fatal(err)
+						sugar.Warn(err)
+						continue
 					}
 
 					f, err := os.OpenFile(oFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
