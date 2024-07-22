@@ -6,10 +6,10 @@ import (
 
 type Params struct {
 	Key     string `goptions:"-i, --input, description='KeyID or list of KeyID'"` // obligatory,
-	ENA     string `goptions:"-u, --url, description='ENA的官方API链接'"`
-	Proxy   string `goptions:"-x, --proxy, description='代理链接地址，比如：http://127.0.0.1:7890'"`
-	Output  string `goptions:"-o, --output, description='输出文件夹'"`
-	Threads int    `goptions:"-t, --threads, description='所使用的线程数'"`
+	ENA     string `goptions:"-u, --url, description='The official api of ENA'"`
+	Proxy   string `goptions:"-x, --proxy, description='The proxy url, eg: http://127.0.0.1:7890'"`
+	Output  string `goptions:"-o, --output, description='The output directory'"`
+	Threads int    `goptions:"-t, --threads, description='The number of threads to use, do not use too much threads'"`
 	Resume  bool   `goptions:"-c, --resume, description='Skip finished requests'"`
 }
 

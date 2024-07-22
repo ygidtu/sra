@@ -6,14 +6,14 @@ import (
 )
 
 type Params struct {
-	RBP     string        `goptions:"-i, --input, description='RBP的list，csv格式，带列名'"` // obligatory,
-	SRA     string        `goptions:"-u, --url, description='SRA的官方链接'"`
-	Proxy   string        `goptions:"-x, --proxy, description='代理链接地址，比如：http://127.0.0.1:7890'"`
-	Output  string        `goptions:"-o, --output, description='输出文件夹'"`
-	Param   string        `goptions:"-p, --param, description='额外的查询参数'"`
+	RBP     string        `goptions:"-i, --input, description='The list of RBP in csv format with header'"` // obligatory,
+	SRA     string        `goptions:"-u, --url, description='The official api of SRA'"`
+	Proxy   string        `goptions:"-x, --proxy, description='The proxy url, eg: http://127.0.0.1:7890'"`
+	Output  string        `goptions:"-o, --output, description='The output directory'"`
+	Param   string        `goptions:"-p, --param, description='The extra parameters'"`
 	Timeout time.Duration `goptions:"-t, --timeout, description='Connection timeout in seconds'"`
 	Exec    string        `goptions:"-e, --exec, description='path to chrome executable'"`
-	Open    bool          `goptions:"--open, description='是否打开chrome的图形化界面'"`
+	Open    bool          `goptions:"--open, description='whether open the GUI of chrome'"`
 }
 
 func (param *Params) String() string {
