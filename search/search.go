@@ -86,6 +86,7 @@ func Search(options *Params, sugar_ *zap.SugaredLogger) {
 	KEYWORD := []string{
 		"knockdown", "knock-down", "knock down",
 		"knockout", "knock out", "knock-out",
+		"knockin", "knock-in", "knock in",
 		"overexpression", "over-expression", "over expression",
 		"siRNA", "shRNA", "dCas9", "sgRNA",
 		"crispr cas9", "crispr-cas9",
